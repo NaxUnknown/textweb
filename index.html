@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collaborative Text Editor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        #editor {
+            width: 80%;
+            height: 300px;
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            margin: 5px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #shareLink {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Collaborative Text Editor</h1>
+    <textarea id="editor" placeholder="Start typing here..."></textarea>
+    <div>
+        <button onclick="saveText()">Save</button>
+        <button onclick="loadText()">Load</button>
+        <button onclick="shareText()">Share</button>
+    </div>
+    <div id="shareLink" style="display: none;"></div>
+
+    <script>
+        // Load any saved text when the page loads
+        window.onload = function() {
+            loadText();
+        }
+
+        function saveText() {
+            const text = document.getElementById('editor').value;
+            localStorage.setItem('savedText', text);
+            alert('Text saved to local storage!');
+        }
+
+        function loadText() {
+            const savedText = localStorage.getItem('savedText');
+            if (savedText) {
+                document.getElementById('editor').value = savedText;
+                alert('Text loaded from local storage!');
+            } else {
+                alert('No saved text found.');
+            }
+        }
+
+        function shareText() {
+            const text = document.getElementById('editor').value;
+            const encodedText = encodeURIComponent(text);
+            const shareableLink = `${window.location.href}?text=${encodedText}`;
+            
+            const shareLinkElement = document.getElementById('shareLink');
+            shareLinkElement.innerHTML = `Shareable Link: <a href="${shareableLink}" target="_blank">${shareableLink}</a>`;
+            shareLinkElement.style.display = 'block';
+        }
+
+        // Check if there's text in the URL parameters and load it
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const textParam = urlParams.get('text');
+            if (textParam) {
+                document.getElementById('editor').value = decodeURIComponent(textParam);
+            } else {
+                loadText();
+            }
+        }
+    </script>
+</body>
+</html>
