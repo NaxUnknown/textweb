@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Collaborative Text Editor</title>
+    <title>Nax Text Editor</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -14,8 +14,8 @@
             background-color: #f0f0f0;
         }
         #editor {
-            width: 80%;
-            height: 300px;
+            width: 90%;
+            height: 760px;
             margin-bottom: 20px;
             padding: 10px;
             border: 1px solid #ccc;
@@ -43,34 +43,57 @@
     </style>
 </head>
 <body>
-    <h1>Collaborative Text Editor</h1>
+    <h1>Nax Text Editor</h1>
     <textarea id="editor" placeholder="Start typing here..."></textarea>
     <div>
-        <button onclick="saveText()">Save</button>
-        <button onclick="loadText()">Load</button>
+        <button onclick="saveFile()">Save</button>
+        <button onclick="loadFile()">Load</button>
         <button onclick="shareText()">Share</button>
     </div>
     <div id="shareLink" style="display: none;"></div>
 
     <script>
-        // Load any saved text when the page loads
-        window.onload = function() {
-            loadText();
-        }
-
-        function saveText() {
+        async function saveFile() {
             const text = document.getElementById('editor').value;
-            localStorage.setItem('savedText', text);
-            alert('Text saved to local storage!');
+            
+            try {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: 'document.ntx',
+                    types: [{
+                        description: 'NTX File',
+                        accept: {'text/plain': ['.ntx']},
+                    }],
+                });
+                
+                const writable = await handle.createWritable();
+                await writable.write(text);
+                await writable.close();
+                
+                alert('File saved successfully!');
+            } catch (err) {
+                console.error('Failed to save file:', err);
+                alert('Failed to save file. See console for details.');
+            }
         }
 
-        function loadText() {
-            const savedText = localStorage.getItem('savedText');
-            if (savedText) {
-                document.getElementById('editor').value = savedText;
-                alert('Text loaded from local storage!');
-            } else {
-                alert('No saved text found.');
+        async function loadFile() {
+            try {
+                const [fileHandle] = await window.showOpenFilePicker({
+                    types: [{
+                        description: 'NTX File',
+                        accept: {'text/plain': ['.ntx']},
+                    }],
+                });
+                
+                const file = await fileHandle.getFile();
+                const contents = await file.text();
+                
+                document.getElementById('editor').value = contents;
+                
+                alert('File loaded successfully!');
+            } catch (err) {
+                console.error('Failed to load file:', err);
+                alert('Failed to load file. See console for details.');
             }
         }
 
@@ -84,14 +107,11 @@
             shareLinkElement.style.display = 'block';
         }
 
-        // Check if there's text in the URL parameters and load it
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
             const textParam = urlParams.get('text');
             if (textParam) {
                 document.getElementById('editor').value = decodeURIComponent(textParam);
-            } else {
-                loadText();
             }
         }
     </script>
