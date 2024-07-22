@@ -14,8 +14,8 @@
             background-color: #f0f0f0;
         }
         #editor {
-            width: 90%;
-            height: 760px;
+            width:90%;
+            height: 740px;
             margin-bottom: 20px;
             padding: 10px;
             border: 1px solid #ccc;
@@ -46,72 +46,94 @@
     <h1>Nax Text Editor</h1>
     <textarea id="editor" placeholder="Start typing here..."></textarea>
     <div>
-        <button onclick="saveFile()">Save</button>
-        <button onclick="loadFile()">Load</button>
+        <button onclick="saveEncryptedFile()">Save</button>
+        <button onclick="loadEncryptedFile()">Load</button>
         <button onclick="shareText()">Share</button>
     </div>
     <div id="shareLink" style="display: none;"></div>
 
     <script>
-        async function saveFile() {
+        const encryptionKey = 'HNIUF8y89'; 
+
+        function encrypt(text) {
+            let result = '';
+            for (let i = 0; i < text.length; i++) {
+                result += String.fromCharCode(text.charCodeAt(i) ^ encryptionKey.charCodeAt(i % encryptionKey.length));
+            }
+            return btoa(result); 
+        }
+
+        function decrypt(encryptedText) {
+            const text = atob(encryptedText); 
+            let result = '';
+            for (let i = 0; i < text.length; i++) {
+                result += String.fromCharCode(text.charCodeAt(i) ^ encryptionKey.charCodeAt(i % encryptionKey.length));
+            }
+            return result;
+        }
+
+        async function saveEncryptedFile() {
             const text = document.getElementById('editor').value;
+            const encryptedText = encrypt(text);
             
             try {
                 const handle = await window.showSaveFilePicker({
                     suggestedName: 'document.ntx',
                     types: [{
                         description: 'NTX File',
-                        accept: {'text/plain': ['.ntx']},
+                        accept: {'application/octet-stream': ['.ntx']},
                     }],
                 });
                 
                 const writable = await handle.createWritable();
-                await writable.write(text);
+                await writable.write(encryptedText);
                 await writable.close();
                 
-                alert('File saved successfully!');
+                alert('Encrypted file saved successfully!');
             } catch (err) {
-                console.error('Failed to save file:', err);
-                alert('Failed to save file. See console for details.');
+                console.error('Failed to save encrypted file:', err);
+                alert('Failed to save encrypted file. See console for details.');
             }
         }
 
-        async function loadFile() {
+        async function loadEncryptedFile() {
             try {
                 const [fileHandle] = await window.showOpenFilePicker({
                     types: [{
-                        description: 'NTX File',
-                        accept: {'text/plain': ['.ntx']},
+                        description: 'Encrypted NTX File',
+                        accept: {'application/octet-stream': ['.ntx']},
                     }],
                 });
                 
                 const file = await fileHandle.getFile();
-                const contents = await file.text();
+                const encryptedContents = await file.text();
                 
-                document.getElementById('editor').value = contents;
+                const decryptedContents = decrypt(encryptedContents);
+                document.getElementById('editor').value = decryptedContents;
                 
-                alert('File loaded successfully!');
+                alert('File loaded and decrypted successfully!');
             } catch (err) {
-                console.error('Failed to load file:', err);
-                alert('Failed to load file. See console for details.');
+                console.error('Failed to load or decrypt file:', err);
+                alert('Failed to load or decrypt file. See console for details.');
             }
         }
 
         function shareText() {
             const text = document.getElementById('editor').value;
-            const encodedText = encodeURIComponent(text);
+            const encodedText = encodeURIComponent(encrypt(text));
             const shareableLink = `${window.location.href}?text=${encodedText}`;
             
             const shareLinkElement = document.getElementById('shareLink');
-            shareLinkElement.innerHTML = `Shareable Link: <a href="${shareableLink}" target="_blank">${shareableLink}</a>`;
+            shareLinkElement.innerHTML = `Shareable Link (encrypted): <a href="${shareableLink}" target="_blank">${shareableLink}</a>`;
             shareLinkElement.style.display = 'block';
         }
 
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
-            const textParam = urlParams.get('text');
-            if (textParam) {
-                document.getElementById('editor').value = decodeURIComponent(textParam);
+            const encryptedTextParam = urlParams.get('text');
+            if (encryptedTextParam) {
+                const decryptedText = decrypt(decodeURIComponent(encryptedTextParam));
+                document.getElementById('editor').value = decryptedText;
             }
         }
     </script>
